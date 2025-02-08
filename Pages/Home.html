@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Contract Analyzer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        .cloud {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50px;
+            animation: moveCloud linear infinite;
+            z-index: -1;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 50px;
+            height: 50px;
+            top: -20px;
+            left: 10px;
+        }
+
+        .cloud::after {
+            width: 60px;
+            height: 60px;
+            top: -30px;
+            left: 50px;
+        }
+
+        .cloud1 {
+            width: 100px;
+            height: 40px;
+            top: 20%;
+            animation-duration: 60s;
+        }
+
+        .cloud2 {
+            width: 140px;
+            height: 40px;
+            top: 50%;
+            animation-duration: 45s;
+            animation-delay: -20s;
+        }
+
+        .cloud3 {
+            width: 120px;
+            height: 40px;
+            top: 70%;
+            animation-duration: 50s;
+            animation-delay: -30s;
+        }
+
+        @keyframes moveCloud {
+            from {
+                left: -200px;
+            }
+            to {
+                left: 100%;
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+        .input-box {
+            width: 80%;
+            padding: 12px;
+            margin: 20px 0;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        h1 {
+            color: #ffffff;
+        }
+        h2 {
+            color: #851192;
+        }
+
+        .response-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 50px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        .response-container h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .response-container h4 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+
+        .response-container ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .response-container li {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+
+        .response-container p {
+            margin: 10px 0;
+            padding: 5px 0;
+        }
+
+        .response-container strong {
+            color: #2c3e50;
+        }
+
+        /* Scrollbar styling */
+        .response-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .response-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .response-container::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 4px;
+        }
+
+        .response-container::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: none;
+            margin: 20px auto;
+            text-align: center;
+            color: white;
+        }
+
+        .loading::after {
+            content: "Loading...";
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "Loading."; }
+            40% { content: "Loading.."; }
+            60% { content: "Loading..."; }
+            80%, 100% { content: "Loading...."; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+    
+    <div class="container">
+        <h1>Smart Contract Analyzer</h1>
+        <h2>Enter Smart Contract Details</h2>
+        <input type="text" 
+               class="input-box" 
+               placeholder="Enter Smart Contract Address (0x...)"
+               id="contractAddress"
+               onkeypress="handleKeyPress(event)">
+        <div id="abiContainer">
+            <textarea 
+                   class="input-box" 
+                   placeholder="Enter Contract ABI (JSON format)"
+                   id="contractABI"
+                   style="height: 100px; resize: vertical;"
+                   onkeypress="handleKeyPress(event)"></textarea>
+        </div>
+        <div style="margin: 10px 0;">
+            <label style="color: white; cursor: pointer;">
+                <input type="checkbox" 
+                       id="noAbiCheckbox" 
+                       onchange="toggleAbiInput()"
+                       style="margin-right: 5px;">
+                No ABI Available
+            </label>
+        </div>
+        <button onclick="sendContractData()" style="padding: 12px 24px; font-size: 16px; cursor: pointer;">
+            Analyze Contract
+        </button>
+        <div id="errorMessage" style="color: red; margin-top: 10px;"></div>
+        <div id="loading" class="loading"></div>
+        <div id="contractInfo" class="response-container"></div>
+    </div>
+
+    <script>
+        function toggleAbiInput() {
+            const abiContainer = document.getElementById('abiContainer');
+            const noAbiCheckbox = document.getElementById('noAbiCheckbox');
+            const contractABI = document.getElementById('contractABI');
+            
+            if (noAbiCheckbox.checked) {
+                abiContainer.style.display = 'none';
+                contractABI.value = ''; // Clear ABI input
+            } else {
+                abiContainer.style.display = 'block';
+            }
+        }
+
+        async function sendContractData() {
+            const address = document.getElementById('contractAddress').value;
+            const noAbiCheckbox = document.getElementById('noAbiCheckbox');
+            const abi = noAbiCheckbox.checked ? null : document.getElementById('contractABI').value;
+            const errorDiv = document.getElementById('errorMessage');
+            const contractInfoDiv = document.getElementById('contractInfo');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Reset display
+            errorDiv.textContent = '';
+            contractInfoDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/process-contract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        address: address,
+                        abi: abi,
+                        noAbi: noAbiCheckbox.checked
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Convert balance string to number before division
+                    const balanceInEth = Number(data.balance) / 1e18;
+                    let html = `
+                        <h3>${data.type} Information</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                            <p><strong>Address:</strong> ${data.address}</p>
+                            <p><strong>Balance:</strong> ${balanceInEth.toFixed(18)} ETH</p>
+                            
+                            ${data.creationInfo?.creator ? `
+                                <p><strong>Creator:</strong> ${data.creationInfo.creator}</p>
+                                <p><strong>Creation Date:</strong> ${new Date(data.creationInfo.creationDate).toLocaleString()}</p>
+                                ${data.creationInfo.gasFee ? `<p><strong>Gas Fee:</strong> ${data.creationInfo.gasFee}</p>` : ''}
+                            ` : ''}
+    
+                            ${data.isContract ? `
+                                <h4>Contract Details</h4>
+                                <p><strong>Bytecode Size:</strong> ${data.contractInfo.bytecodeSize} bytes</p>
+                                ${data.contractInfo.isProxy ? `
+                                    <p><strong>Proxy Contract:</strong> Yes</p>
+                                    <p><strong>Implementation:</strong> ${data.contractInfo.implementation}</p>
+                                ` : ''}
+                                
+                                ${data.tokenInfo ? `
+                                    <h4>Token Information</h4>
+                                    <p><strong>Type:</strong> ${data.tokenInfo.type}</p>
+                                    ${data.tokenInfo.name ? `
+                                        <p><strong>Name:</strong> ${data.tokenInfo.name}</p>
+                                        <p><strong>Symbol:</strong> ${data.tokenInfo.symbol}</p>
+                                        <p><strong>Decimals:</strong> ${data.tokenInfo.decimals}</p>
+                                        <p><strong>Total Supply:</strong> ${
+                                            Number(data.tokenInfo.totalSupply) / Math.pow(10, data.tokenInfo.decimals)
+                                        } ${data.tokenInfo.symbol}</p>
+                                    ` : ''}
+                                ` : ''}
+                            ` : `
+                                <h4>Wallet Details</h4>
+                                <p><strong>Transaction Count:</strong> ${data.walletInfo.transactionCount}</p>
+                            `}
+                        </div>
+                    `;
+                    contractInfoDiv.innerHTML = html;
+                    contractInfoDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = data.error || 'Invalid input';
+                }
+            } catch (error) {
+                console.error('Frontend error:', error);
+                errorDiv.textContent = 'Something wrong occurred with the request';
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendContractData();
+            }
+        }
+    </script>
+</body>
+</html>
