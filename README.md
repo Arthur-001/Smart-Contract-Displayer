@@ -40,8 +40,14 @@ To set up and run this project locally, follow these steps:
 ### Installation
 
 1.  **Clone the repository:**
+
     ```bash
-    git clone [https://github.com/Arthur-001/Smart-Contract-Displayer.git](https://github.com/Arthur-001/Smart-Contract-Displayer.git)
+    git clone https://github.com/Arthur-001/Smart-Contract-Displayer.git
+    ```
+    
+2. **Go to the project**
+
+    ```bash
     cd Smart-Contract-Displayer
     ```
 
