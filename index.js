@@ -19,7 +19,7 @@ try {
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("Hello World 😎");
+  res.redirect("/home");
 });
 
 const logger = (req, res, next) => {
